@@ -45,16 +45,20 @@ func newLogger(ctx context.Context, enabLevel zapcore.Level, encoder zapcore.Enc
 
 	if ctx != nil {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, syscall.SIGUSR1)
+		signal.Notify(c, syscall.SIGUSR1, syscall.SIGUSR2)
 		go func(ctx context.Context) {
 			defer signal.Stop(c)
 			for {
 				select {
-				case <-c:
-					if enab.Level() == zap.InfoLevel {
-						enab.SetLevel(zap.DebugLevel)
+				case sig := <-c:
+					if sig == syscall.SIGUSR1 {
+						if enab.Level() < zapcore.FatalLevel {
+							enab.SetLevel(enab.Level() + 1)
+						}
 					} else {
-						enab.SetLevel(zap.InfoLevel)
+						if enab.Level() > -127 {
+							enab.SetLevel(enab.Level() - 1)
+						}
 					}
 				case <-ctx.Done():
 					return
