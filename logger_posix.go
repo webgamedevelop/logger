@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 
 	"github.com/go-logr/logr"
@@ -15,17 +16,41 @@ import (
 )
 
 // New return a new logr.Logger and its associated flush function.
-func New(ctx context.Context, enab zapcore.Level, format string, cfg zapcore.EncoderConfig, writers ...zapcore.WriteSyncer) (logr.Logger, func()) {
+func New(ctx context.Context, cfg zapcore.EncoderConfig, writers ...zapcore.WriteSyncer) (logr.Logger, func()) {
+	f := defaultFile()
+	if f.Filename != "" {
+		writers = append(writers, f)
+	}
+	if stdout {
+		if !slices.ContainsFunc(writers, func(syncer zapcore.WriteSyncer) bool {
+			if syncer == os.Stdout {
+				return true
+			}
+			return false
+		}) {
+			writers = append(writers, os.Stdout)
+		}
+	}
+	if stderr {
+		if !slices.ContainsFunc(writers, func(syncer zapcore.WriteSyncer) bool {
+			if syncer == os.Stderr {
+				return true
+			}
+			return false
+		}) {
+			writers = append(writers, os.Stderr)
+		}
+	}
+
 	var wss []zapcore.WriteSyncer
 	for _, writer := range writers {
 		wss = append(wss, zapcore.Lock(writer))
 	}
-
 	encoder := zapcore.NewConsoleEncoder(cfg)
-	if format == JSONLogFormat {
+	if format == jsonLogFormat {
 		encoder = zapcore.NewJSONEncoder(cfg)
 	}
-	return newLogger(ctx, enab, encoder, wss...)
+	return newLogger(ctx, zapcore.Level(-enab), encoder, wss...)
 }
 
 // NewLogger creates a new logr.Logger and its associated flush function.

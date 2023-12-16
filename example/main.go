@@ -4,13 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/spf13/pflag"
-	"github.com/webgamedevelop/logger"
-	"go.uber.org/zap/zapcore"
 	"k8s.io/klog/v2"
+
+	"github.com/webgamedevelop/logger"
 )
 
 func main() {
@@ -18,23 +17,35 @@ func main() {
 	defer cancel()
 
 	var filteredKlogFlags flag.FlagSet
-	FilterFlags(&filteredKlogFlags)
-	pflag.CommandLine.AddGoFlagSet(&filteredKlogFlags)
-	pflag.Parse()
 
-	// log to file
-	f := logger.NewFile("write-file.log", logger.Size(100), logger.Age(7), logger.Backups(7), logger.LocalTime(true))
-	logrLogger, flush := logger.New(ctx, zapcore.Level(0), "text", logger.DefaultEncoderConfig, os.Stdout, f)
+	// init klog flags
+	FilterFlags(&filteredKlogFlags)
+
+	// init logger flags
+	logger.InitFlags(&filteredKlogFlags)
+
+	pflag.CommandLine.AddGoFlagSet(&filteredKlogFlags)
+	pflag.BoolP("help", "h", false, "Print help information")
+	pflag.Parse()
+	if pflag.CommandLine.Changed("help") {
+		pflag.Usage()
+		return
+	}
+
+	logrLogger, flush := logger.New(ctx, logger.DefaultEncoderConfig)
 	klog.SetLoggerWithOptions(logrLogger, klog.FlushLogger(flush))
 	defer klog.Flush()
 
+	// 启动时指定命令行参数 -v=3
+	// 通过 `kill -SIGUSR1 $PID` 减少日志输出
+	// 通过 `kill -SIGUSR2 $PID` 打印更详细信息
 	for {
 		klog.Info("info log test")
 		klog.V(1).Info("v1 log test")
 		klog.V(2).Info("v2 log test")
 		klog.V(3).Info("v3 log test")
 		fmt.Println()
-		time.Sleep(time.Second)
+		time.Sleep(time.Second * 3)
 	}
 }
 

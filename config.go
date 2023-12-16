@@ -6,8 +6,8 @@ import (
 
 // Supported klog formats
 const (
-	DefaultLogFormat = "text"
-	JSONLogFormat    = "json"
+	consoleLogFormat = "console"
+	jsonLogFormat    = "json"
 )
 
 var DefaultEncoderConfig = zapcore.EncoderConfig{
