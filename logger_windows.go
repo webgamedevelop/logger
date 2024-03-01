@@ -38,28 +38,20 @@ func New(ctx context.Context, cfg zapcore.EncoderConfig, writers ...zapcore.Writ
 		}
 	}
 
-	var wss []zapcore.WriteSyncer
-	for _, writer := range writers {
-		wss = append(wss, zapcore.Lock(writer))
-	}
+	combinedWriteSyncer := zap.CombineWriteSyncers(writers...)
+	writer = combinedWriteSyncer
 	encoder := zapcore.NewConsoleEncoder(cfg)
 	if format == jsonLogFormat {
 		encoder = zapcore.NewJSONEncoder(cfg)
 	}
-	return newLogger(zapcore.Level(-enab), encoder, wss...)
+	return newLogger(zapcore.Level(-enab), encoder, combinedWriteSyncer)
 }
 
 // NewLogger creates a new logr.Logger and its associated flush function.
-func newLogger(enabLevel zapcore.Level, encoder zapcore.Encoder, streams ...zapcore.WriteSyncer) (logr.Logger, func()) {
-	var cores []zapcore.Core
+func newLogger(enabLevel zapcore.Level, encoder zapcore.Encoder, writeSyncer zapcore.WriteSyncer) (logr.Logger, func()) {
 	enab := zap.NewAtomicLevel()
 	enab.SetLevel(enabLevel)
-	for _, stream := range streams {
-		core := zapcore.NewCore(encoder, stream, enab)
-		cores = append(cores, core)
-	}
-
-	core := zapcore.NewTee(cores...)
+	core := zapcore.NewCore(encoder, writeSyncer, enab)
 	stackTraceLevel := zap.NewAtomicLevel()
 	stackTraceLevel.SetLevel(zapcore.ErrorLevel)
 	l := zap.New(core, zap.WithCaller(true), zap.AddStacktrace(stackTraceLevel))

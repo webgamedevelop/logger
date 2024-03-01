@@ -1,8 +1,16 @@
 package logger
 
 import (
+	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
+
+var writer zapcore.WriteSyncer
+
+// Writer export log writer
+func Writer() zapcore.WriteSyncer {
+	return writer
+}
 
 type File struct {
 	lumberjack.Logger
