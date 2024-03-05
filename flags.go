@@ -18,7 +18,7 @@ func init() {
 	commandLine.BoolVar(&stdout, "logger-stdout", true, "Log to standard out")
 	commandLine.BoolVar(&stderr, "logger-stderr", false, "Log to standard error")
 	commandLine.StringVar(&format, "logger-encoder", "console", "Zap log encoding (one of 'json' or 'console')")
-	commandLine.IntVar(&enab, "logger-level-enabler", 0, "LevelEnabler decides whether a given logging level is enabled when logging a message")
+	commandLine.IntVar(&enab, "logger-level-enabler", 127, "LevelEnabler decides whether a given logging level is enabled when logging a message")
 
 	commandLine.StringVar(&file.Filename, "logger-filename", "", "File to write logs to")
 	commandLine.IntVar(&file.MaxSize, "logger-max-size", 100, "Maximum size in megabytes of the log file before it gets rotated")
