@@ -32,7 +32,11 @@ func main() {
 		return
 	}
 
-	logrLogger, flush := logger.New(ctx, logger.DefaultEncoderConfig)
+	logrLogger, flush, err := logger.New(ctx, logger.DefaultEncoderConfig)
+	if err != nil {
+		panic(err)
+	}
+
 	klog.SetLoggerWithOptions(logrLogger, klog.FlushLogger(flush))
 	defer klog.Flush()
 
@@ -57,7 +61,7 @@ func FilterFlags(fs *flag.FlagSet) {
 	}
 	allFlags.VisitAll(func(f *flag.Flag) {
 		switch f.Name {
-		case "v", "vmodule":
+		case "vmodule":
 			fs.Var(f.Value, f.Name, f.Usage)
 		}
 	})

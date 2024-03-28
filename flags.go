@@ -10,15 +10,20 @@ var (
 	stdout bool
 	stderr bool
 	file   File
+	klogV  int
 )
 
-var commandLine flag.FlagSet
+var (
+	commandLine flag.FlagSet
+	klogFS      = &flag.FlagSet{}
+)
 
 func init() {
 	commandLine.BoolVar(&stdout, "logger-stdout", true, "Log to standard out")
 	commandLine.BoolVar(&stderr, "logger-stderr", false, "Log to standard error")
 	commandLine.StringVar(&format, "logger-encoder", "console", "Zap log encoding (one of 'json' or 'console')")
 	commandLine.IntVar(&enab, "logger-level-enabler", 127, "LevelEnabler decides whether a given logging level is enabled when logging a message")
+	commandLine.IntVar(&klogV, "logger-klog-v", 0, "number for klog level verbosity")
 
 	commandLine.StringVar(&file.Filename, "logger-filename", "", "File to write logs to")
 	commandLine.IntVar(&file.MaxSize, "logger-max-size", 100, "Maximum size in megabytes of the log file before it gets rotated")

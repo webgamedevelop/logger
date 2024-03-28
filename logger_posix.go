@@ -4,8 +4,10 @@ package logger
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/go-logr/logr"
@@ -15,7 +17,7 @@ import (
 )
 
 // NewLogger creates a new logr.Logger and its associated flush function.
-func newLogger(ctx context.Context, enabLevel zapcore.Level, encoder zapcore.Encoder, writeSyncer zapcore.WriteSyncer) (logr.Logger, func()) {
+func newLogger(ctx context.Context, enabLevel zapcore.Level, encoder zapcore.Encoder, writeSyncer zapcore.WriteSyncer) (logr.Logger, func(), error) {
 	enab := zap.NewAtomicLevel()
 	enab.SetLevel(enabLevel)
 	core := zapcore.NewCore(encoder, writeSyncer, enab)
@@ -32,12 +34,18 @@ func newLogger(ctx context.Context, enabLevel zapcore.Level, encoder zapcore.Enc
 				select {
 				case sig := <-c:
 					if sig == syscall.SIGUSR1 {
-						if enab.Level() < zapcore.FatalLevel {
-							enab.SetLevel(enab.Level() + 1)
+						if klogV < 127 {
+							klogV += 1
+							if err := klogFS.Set("v", strconv.Itoa(klogV)); err != nil {
+								fmt.Println(err)
+							}
 						}
 					} else {
-						if enab.Level() > -127 {
-							enab.SetLevel(enab.Level() - 1)
+						if klogV > 0 {
+							klogV -= 1
+							if err := klogFS.Set("v", strconv.Itoa(klogV)); err != nil {
+								fmt.Println(err)
+							}
 						}
 					}
 				case <-ctx.Done():
@@ -47,5 +55,5 @@ func newLogger(ctx context.Context, enabLevel zapcore.Level, encoder zapcore.Enc
 		}(ctx)
 	}
 
-	return zapr.NewLoggerWithOptions(l), func() { _ = l.Sync() }
+	return zapr.NewLoggerWithOptions(l), func() { _ = l.Sync() }, nil
 }
