@@ -44,11 +44,11 @@ func New(ctx context.Context, cfg zapcore.EncoderConfig, writers ...zapcore.Writ
 	if format == jsonLogFormat {
 		encoder = zapcore.NewJSONEncoder(cfg)
 	}
-	return newLogger(zapcore.Level(-enab), encoder, combinedWriteSyncer)
+	return newLogger(ctx, zapcore.Level(-enab), encoder, combinedWriteSyncer)
 }
 
 // NewLogger creates a new logr.Logger and its associated flush function.
-func newLogger(enabLevel zapcore.Level, encoder zapcore.Encoder, writeSyncer zapcore.WriteSyncer) (logr.Logger, func()) {
+func newLogger(_ context.Context, enabLevel zapcore.Level, encoder zapcore.Encoder, writeSyncer zapcore.WriteSyncer) (logr.Logger, func()) {
 	enab := zap.NewAtomicLevel()
 	enab.SetLevel(enabLevel)
 	core := zapcore.NewCore(encoder, writeSyncer, enab)
